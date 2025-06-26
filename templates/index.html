@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Asana Encoder</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+  <style>
+    body {
+      background-color: #909090;
+      margin: 0;
+      padding: 2rem;
+      font-family: Arial, sans-serif;
+    }
+
+
+    h1 {
+      margin-top: 0;
+      border-radius: 1px;
+      border-color: #333;
+      background-color: #c4c4c4;
+      padding: 10px;
+      border-left: 6px solid #333;
+    }
+
+    .file-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: left;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .file-entry {
+      background-color: #909090;
+      border-radius: 6px;
+      border-left: 3px solid #333;
+      border-right: 1px solid #333;
+      border-bottom: 3px solid #333;
+      border-top: 1px solid #333;
+      box-sizing: border-box;
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      margin-top: 1rem;
+      overflow: hidden;
+      align-items: center;
+    }
+
+    .file-header {
+      background-color: #c4c4c4;
+      width: 100%;
+      text-align: left;
+      padding: 5px;
+      padding-left: 15px;
+      font-weight: bold;
+      font-size: 1rem;
+      border-bottom: 1px solid #333;
+    }
+
+    video {
+      width: 320px;
+      height: 180px;
+      background: black;
+      display: block;
+    }
+
+    .button-row {
+      display: flex;
+      align-items: center;
+      margin-top: 0.5rem;
+    }
+
+    .encode-btn {
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #333;
+      border-left: 3px solid #333;
+      border-bottom: 3px solid #333;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .encode-btn.encoded {
+      background-color: #4caf50;
+    }
+
+    .still-btn {
+      margin-left: 1rem;
+      padding: 0.5rem 1rem;
+      font-size: 1rem;
+      border: 1px solid #333;
+      border-left: 3px solid #333;
+      border-bottom: 3px solid #333;
+      border-radius: 4px;
+      background-color: #ff9800;
+      color: white;
+      cursor: pointer;
+    }
+
+    .still-btn:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
+    .progress-container {
+      width: 320px;
+      background-color: #636363;
+      height: 20px;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-top: 5px;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background-color: #4caf50;
+      width: 0%;
+      transition: width 0.5s;
+    }
+
+    .no-files-message {
+      font-size: 1.5rem;
+      color: #555;
+      text-align: center;
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>Asana Preview Encoder</h1>
+
+  {% if files|length == 0 %}
+    <div class="no-files-message">Add movies to the folder</div>
+  {% endif %}
+
+  <div class="file-grid">
+  {% for file in files %}
+    <div class="file-entry">
+      <div class="file-header">{{ file.basename }}</div>
+      <div style="padding: 10px; width: 100%; display: flex; flex-direction: column; align-items: center;">
+      {% if file.encoded %}
+        <video controls data-filename="{{ file.name }}">
+          <source src="{{ url_for('serve_video', filename=file.mp4) }}" type="video/mp4">
+          Your browser does not support HTML5 video.
+        </video>
+      {% elif file.thumb %}
+        <img src="{{ url_for('serve_video', filename='temp_thumbs/' + file.thumb) }}" width="320" height="180" alt="Thumbnail for {{ file.name }}" data-filename="{{ file.name }}">
+      {% else %}
+        <div style="width: 320px; height: 180px; background: #333; display:flex; align-items:center; justify-content:center; color:#888;">No preview available</div>
+      {% endif %}
+      <div class="button-row">
+        <button
+          class="encode-btn {% if file.encoded %}encoded{% endif %}"
+          data-filename="{{ file.name }}"
+        >
+          Encode
+        </button>
+        <button class="still-btn" data-filename="{{ file.name }}" {% if not file.encoded %}hidden{% endif %}>Export Still</button>
+      </div>
+      <div class="progress-container">
+        <div class="progress-bar" id="progress-{{ file.name | replace('.', '_') }}"></div>
+      </div>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+
+  <script>
+    const encodeButtons = document.querySelectorAll('.encode-btn');
+    const stillButtons = document.querySelectorAll('.still-btn');
+
+    encodeButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const filename = btn.dataset.filename;
+        const originalText = btn.textContent;
+
+        btn.disabled = true;
+        btn.textContent = 'Encoding...';
+        btn.classList.remove('encoded');
+
+        await fetch('/encode_one', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename })
+        });
+
+        pollProgress(filename, btn, originalText);
+      });
+    });
+
+stillButtons.forEach(stillBtn => {
+  stillBtn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    if (stillBtn.disabled) return;
+    const filename = stillBtn.dataset.filename;
+    const video = document.querySelector(`video[data-filename="${filename}"]`);
+    if (!video) {
+      stillBtn.textContent = 'No video loaded';
+      return;
+    }
+    const time = video.currentTime;
+    const timecode = new Date(time * 1000).toISOString().substr(11, 8);
+
+    stillBtn.disabled = true;
+    stillBtn.textContent = 'Exporting...';
+
+    const res = await fetch('/export_still', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ filename, timecode })
+    });
+
+    const result = await res.json();
+    if (result.status === 'success') {
+      stillBtn.textContent = 'Export Again';
+      console.log(`Still exported to /video/${result.output}`);
+
+      // Insert new still image in UI, replacing only previous image (not video)
+      const image = document.createElement('img');
+      image.src = `/video/${result.output}`;
+      image.width = 320;
+      image.height = 180;
+      image.alt = `Still of ${filename}`;
+
+      const container = stillBtn.closest('.file-entry');
+      const existingImage = container.querySelector('img');
+      if (existingImage) {
+        existingImage.remove();
+      }
+
+      container.insertBefore(image, container.querySelector('.button-row'));
+    } else {
+      stillBtn.textContent = 'Export Failed';
+    }
+    stillBtn.disabled = false;
+  });
+});
+
+    function pollProgress(filename, button, originalText) {
+      const id = filename.replace(/\./g, '_');
+      const bar = document.getElementById(`progress-${id}`);
+      const stillBtn = document.querySelector(`.still-btn[data-filename="${filename}"]`);
+
+      const interval = setInterval(async () => {
+        const res = await fetch('/progress');
+        const data = await res.json();
+
+        for (const key in data) {
+          if (data[key].filename === filename) {
+            const progress = data[key].progress;
+            if (bar) bar.style.width = progress + '%';
+
+            if (progress >= 100) {
+              location.reload();
+              clearInterval(interval);
+              button.disabled = false;
+              button.textContent = originalText;
+              button.classList.add('encoded');
+
+              if (stillBtn) {
+                stillBtn.disabled = false;
+              }
+
+              const container = button.closest('.file-entry');
+              const existingImage = container.querySelector(`img[data-filename="${filename}"]`);
+              if (existingImage) existingImage.remove();
+
+              let video = container.querySelector('video');
+              if (!video) {
+                video = document.createElement('video');
+                video.controls = true;
+                video.width = 320;
+                video.height = 180;
+                video.dataset.filename = filename;
+
+                const source = document.createElement('source');
+                source.src = `/video/${filename.replace('.mov', '.mp4')}`;
+                source.type = 'video/mp4';
+                video.appendChild(source);
+
+                container.insertBefore(video, container.querySelector('.button-row'));
+              } else {
+                const source = video.querySelector('source');
+                source.src = `/video/${filename.replace('.mov', '.mp4')}`;
+                video.load();
+              }
+            }
+          }
+        }
+      }, 1000);
+    }
+
+  // Automatic page refresh after 12 seconds
+  setTimeout(() => {
+    location.reload();
+  }, 12000);
+
+  </script>
+</body>
+</html>
