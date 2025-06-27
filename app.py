@@ -49,8 +49,13 @@ def serve_video(filename):
     return "File not found", 404
 
 def run_ffmpeg_encode(input_path, output_path, job_id, filename):
-    cmd = [
-        'ffmpeg', '-i', str(input_path), '-y',
+    cmd = ['ffmpeg', '-i', str(input_path), '-y']
+
+    # Add time limit if this is a countdown video
+    if "countdown" in filename.lower():
+        cmd.extend(['-t', '20'])
+
+    cmd.extend([
         '-s', '1920x1080',
         '-c:v', 'libx264',
         '-pix_fmt', 'yuv420p',
@@ -58,7 +63,7 @@ def run_ffmpeg_encode(input_path, output_path, job_id, filename):
         '-maxrate', '65400k',
         '-bufsize', '38000k',
         str(output_path)
-    ]
+    ])
 
     process = subprocess.Popen(cmd, stderr=subprocess.PIPE, universal_newlines=True)
     total_duration = None

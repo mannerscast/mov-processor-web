@@ -141,7 +141,12 @@
   <div class="file-grid">
   {% for file in files %}
     <div class="file-entry">
-      <div class="file-header">{{ file.basename }}</div>
+      <div class="file-header">
+        {{ file.basename }}
+        {% if "countdown" in file.basename.lower() %}
+        <span style="float: right; background-color: #cc3333; color: white; padding: 3px ; padding-right: 8px; border-radius: 3px; font-weight: bold; font-size: 0.7rem;">CD</span>
+        {% endif %}
+      </div>
       <div style="padding: 10px; width: 100%; display: flex; flex-direction: column; align-items: center;">
       {% if file.encoded %}
         <video controls data-filename="{{ file.name }}">
@@ -149,7 +154,7 @@
           Your browser does not support HTML5 video.
         </video>
       {% elif file.thumb %}
-        <img src="{{ url_for('serve_video', filename='temp_thumbs/' + file.thumb) }}" width="320" height="180" alt="Thumbnail for {{ file.name }}" data-filename="{{ file.name }}">
+        <img src="{{ url_for('serve_video', filename=file.thumb) }}" width="320" height="180" alt="Thumbnail for {{ file.name }}" data-filename="{{ file.name }}">
       {% else %}
         <div style="width: 320px; height: 180px; background: #333; display:flex; align-items:center; justify-content:center; color:#888;">No preview available</div>
       {% endif %}
