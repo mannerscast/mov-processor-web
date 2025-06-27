@@ -4,6 +4,7 @@ import subprocess
 import threading
 import os
 import re
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key_here'
@@ -39,13 +40,16 @@ def index():
 
 @app.route('/video/<path:filename>')
 def serve_video(filename):
-    base_dir = DEFAULT_BASE_DIR
-    full_path = base_dir / filename
+    safe_name = secure_filename(filename)
+
+    full_path = DEFAULT_BASE_DIR / safe_name
     if full_path.exists():
-        return send_from_directory(base_dir, filename)
-    thumb_path = THUMB_DIR / filename
+        return send_from_directory(DEFAULT_BASE_DIR, safe_name)
+
+    thumb_path = THUMB_DIR / safe_name
     if thumb_path.exists():
-        return send_from_directory(THUMB_DIR, filename)
+        return send_from_directory(THUMB_DIR, safe_name)
+
     return "File not found", 404
 
 def run_ffmpeg_encode(input_path, output_path, job_id, filename):
@@ -139,4 +143,4 @@ if __name__ == '__main__':
     for mov_file in DEFAULT_BASE_DIR.glob("*.mov"):
         generate_temp_thumb(mov_file)
 
-    app.run(debug=True)
+   app.run(host='0.0.0.0', port=5050, debug=True)
