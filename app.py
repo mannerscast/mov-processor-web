@@ -143,4 +143,4 @@ if __name__ == '__main__':
     for mov_file in DEFAULT_BASE_DIR.glob("*.mov"):
         generate_temp_thumb(mov_file)
 
-   app.run(host='0.0.0.0', port=5050, debug=True)
+    app.run(host='0.0.0.0', port=5050, debug=True)
