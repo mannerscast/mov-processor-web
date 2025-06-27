@@ -20,7 +20,7 @@ python3 app.py &
 sleep 3
 
 # Open browser
-open http://127.0.0.1:5000/
+open http://127.0.0.1:5050/
 
 # Keep terminal open if app crashes
 wait
