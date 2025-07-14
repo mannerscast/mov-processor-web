@@ -1,0 +1,45 @@
+{\rtf1\ansi\ansicpg1252\cocoartf2822
+\cocoatextscaling0\cocoaplatform0{\fonttbl\f0\fswiss\fcharset0 Helvetica;\f1\fnil\fcharset0 AppleColorEmoji;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww13000\viewh11200\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 # 
+\f1 \uc0\u55356 \u57246 \u65039 
+\f0  MOV Processor Web App\
+\
+This is a lightweight Flask-based web application that helps you:\
+\
+- Preview `.mov` files with auto-generated thumbnails\
+- Encode `.mov` files to `.mp4` using `ffmpeg`\
+- Export still frames from encoded videos\
+\
+All files are automatically managed from a single folder:  \
+`~/Desktop/RenderTemp`\
+\
+---\
+\
+## 
+\f1 \uc0\u55357 \u56513 
+\f0  Folder Structure\
+\
+| Type            	| Path                             				| Description                               \
+|\'97\'97\'97\'97\'97\'97\'97\'97\'95\'95|\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'95\'95|\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97\'97|\
+| Input `.mov`    	| `~/Desktop/RenderTemp/`          			| Drop your MOV files here\
+| Output `.mp4`   	| Same folder                      			| Encoded MP4s are saved here\
+| Thumbnails      	| `~/Desktop/RenderTemp/temp_thumbs/` 	| Auto-generated thumbnails per MOV file\
+| Exported stills 	| `~/Desktop/RenderTemp/`          			| JPEG stills are saved alongside videos\
+\
+---\
+\
+## 
+\f1 \uc0\u55357 \u56960 
+\f0  Setup Instructions\
+\
+### 1. Clone the repository\
+\
+```bash\
+cd [your GitHub folder]\
+git clone https://github.com/yourusername/mov-processor-web.git\
+cd mov-processor-web}
