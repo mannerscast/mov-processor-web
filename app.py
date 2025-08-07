@@ -60,18 +60,24 @@ def run_ffmpeg_encode(input_path, output_path, job_id, filename):
         cmd.extend(['-t', '20'])
 
     cmd.extend([
-        '-s', '1920x1080',
+        '-vf', 'scale=iw/2:ih/2',
         '-c:v', 'libx264',
         '-pix_fmt', 'yuv420p',
         '-b:v', '4500k',
         '-maxrate', '65400k',
         '-bufsize', '38000k',
+        '-colorspace', '1',
+        '-color_primaries', '1',
+        '-color_trc', '1',
         str(output_path)
     ])
 
-    process = subprocess.Popen(cmd, stderr=subprocess.PIPE, universal_newlines=True)
+    print(f"Running FFmpeg command: {' '.join(cmd)}")  # Debugging log
+    process = subprocess.Popen(cmd, stderr=subprocess.PIPE, stdout=subprocess.PIPE, universal_newlines=True)
+
     total_duration = None
     for line in process.stderr:
+        print(line)  # Log each line from stderr
         if 'Duration' in line:
             match = re.search(r'Duration: (\d+):(\d+):(\d+).(\d+)', line)
             if match:
@@ -85,6 +91,8 @@ def run_ffmpeg_encode(input_path, output_path, job_id, filename):
                 percent = min(100, int((current / total_duration) * 100))
                 progress_data[job_id] = {'filename': filename, 'progress': percent}
     process.wait()
+
+    # Add final 100% progress when encoding finishes
     progress_data[job_id] = {'filename': filename, 'progress': 100}
 
 @app.route('/encode_one', methods=['POST'])
@@ -100,7 +108,10 @@ def encode_one():
     job_id = f"job_{filename}"
     progress_data[job_id] = {'filename': filename, 'progress': 0}
 
+    # Log to confirm the thread starts
+    print(f"Starting encoding for {filename}")
     threading.Thread(target=run_ffmpeg_encode, args=(input_path, output_path, job_id, filename)).start()
+
     return jsonify({'status': 'started'})
 
 @app.route('/progress', methods=['GET'])
@@ -137,6 +148,27 @@ def generate_temp_thumb(file_path):
             'ffmpeg', '-y', '-ss', '00:00:02', '-i', str(file_path),
             '-vframes', '1', str(thumb_path)
         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+
+# New delete route to handle file deletion
+@app.route('/delete_file', methods=['POST'])
+def delete_file():
+    data = request.get_json()
+    filename = data.get('filename')
+    if not filename:
+        return jsonify({'error': 'Missing filename'}), 400
+
+    base_dir = DEFAULT_BASE_DIR
+    mov_file = base_dir / filename
+    mp4_file = base_dir / f"{filename.rsplit('.', 1)[0]}.mp4"
+
+    try:
+        if mov_file.exists():
+            os.remove(mov_file)
+        if mp4_file.exists():
+            os.remove(mp4_file)
+        return jsonify({'status': 'success', 'message': f'{filename} and its associated .mp4 were deleted successfully.'})
+    except Exception as e:
+        return jsonify({'error': f'Failed to delete files: {str(e)}'}), 500
 
 # Generate thumbs at startup
 if __name__ == '__main__':

@@ -13,7 +13,6 @@
       font-family: Arial, sans-serif;
     }
 
-
     h1 {
       margin-top: 0;
       border-radius: 1px;
@@ -21,6 +20,25 @@
       background-color: #c4c4c4;
       padding: 10px;
       border-left: 6px solid #333;
+    }
+
+    .top-controls {
+      display: flex;
+      align-items: center;
+      margin-bottom: 1rem;
+      gap: 1rem;
+    }
+
+    .refresh-btn {
+      padding: 6px 14px;
+      font-size: 14px;
+      background-color: #007bff;
+      border: 1px solid #333;
+      border-left: 3px solid #333;
+      border-bottom: 3px solid #333;
+      border-radius: 4px;
+      color: white;
+      cursor: pointer;
     }
 
     .file-grid {
@@ -53,8 +71,7 @@
       background-color: #c4c4c4;
       width: 100%;
       text-align: left;
-      padding: 5px;
-      padding-left: 15px;
+      padding: 5px 15px;
       font-weight: bold;
       font-size: 1rem;
       border-bottom: 1px solid #333;
@@ -73,16 +90,19 @@
       margin-top: 0.5rem;
     }
 
-    .encode-btn {
+    .encode-btn, .still-btn, .delete-btn {
       padding: 0.5rem 1rem;
       font-size: 1rem;
       border: 1px solid #333;
       border-left: 3px solid #333;
       border-bottom: 3px solid #333;
       border-radius: 4px;
-      background-color: #007bff;
       color: white;
       cursor: pointer;
+    }
+
+    .encode-btn {
+      background-color: #007bff;
     }
 
     .encode-btn.encoded {
@@ -91,20 +111,21 @@
 
     .still-btn {
       margin-left: 1rem;
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-      border: 1px solid #333;
-      border-left: 3px solid #333;
-      border-bottom: 3px solid #333;
-      border-radius: 4px;
       background-color: #ff9800;
-      color: white;
-      cursor: pointer;
     }
 
     .still-btn:disabled {
       background-color: #ccc;
       cursor: not-allowed;
+    }
+
+    .delete-btn {
+      margin-left: 1rem;
+      background-color: #f44336; /* Red background */
+    }
+
+    .delete-btn:hover {
+      background-color: #e53935;
     }
 
     .progress-container {
@@ -129,10 +150,74 @@
       text-align: center;
       margin-top: 3rem;
     }
+
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      font-size: 14px;
+      color: white;
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 42px;
+      height: 24px;
+      margin-left: 8px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .2s;
+      border-radius: 24px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .2s;
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: #007bff;
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
   </style>
 </head>
 <body>
   <h1>Asana Preview Encoder</h1>
+
+  <div class="top-controls">
+    <button class="refresh-btn" onclick="location.reload()">Refresh</button>
+    <div class="toggle-container">
+      Auto-refresh
+      <label class="switch">
+        <input type="checkbox" id="auto-refresh-toggle" checked>
+        <span class="slider"></span>
+      </label>
+    </div>
+  </div>
 
   {% if files|length == 0 %}
     <div class="no-files-message">Add movies to the folder</div>
@@ -144,7 +229,7 @@
       <div class="file-header">
         {{ file.basename }}
         {% if "countdown" in file.basename.lower() %}
-        <span style="float: right; background-color: #cc3333; color: white; padding: 3px ; padding-right: 8px; border-radius: 3px; font-weight: bold; font-size: 0.7rem;">CD</span>
+        <span style="float: right; background-color: #cc3333; color: white; padding: 3px; padding-right: 8px; border-radius: 3px; font-weight: bold; font-size: 0.7rem;">CD</span>
         {% endif %}
       </div>
       <div style="padding: 10px; width: 100%; display: flex; flex-direction: column; align-items: center;">
@@ -166,13 +251,9 @@
         <div style="width: 320px; height: 180px; background: #333; display:flex; align-items:center; justify-content:center; color:#888;">No preview available</div>
       {% endif %}
       <div class="button-row">
-        <button
-          class="encode-btn {% if file.encoded %}encoded{% endif %}"
-          data-filename="{{ file.name }}"
-        >
-          Encode
-        </button>
+        <button class="encode-btn {% if file.encoded %}encoded{% endif %}" data-filename="{{ file.name }}">Encode</button>
         <button class="still-btn" data-filename="{{ file.name }}" {% if not file.encoded %}hidden{% endif %}>Export Still</button>
+        <button class="delete-btn" data-filename="{{ file.name }}">Delete</button>  <!-- New Delete Button -->
       </div>
       <div class="progress-container">
         <div class="progress-bar" id="progress-{{ file.name | replace('.', '_') }}"></div>
@@ -185,6 +266,8 @@
   <script>
     const encodeButtons = document.querySelectorAll('.encode-btn');
     const stillButtons = document.querySelectorAll('.still-btn');
+    const deleteButtons = document.querySelectorAll('.delete-btn'); // Select Delete buttons
+    const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
 
     encodeButtons.forEach(btn => {
       btn.addEventListener('click', async () => {
@@ -205,53 +288,74 @@
       });
     });
 
-stillButtons.forEach(stillBtn => {
-  stillBtn.addEventListener('click', async (e) => {
-    e.preventDefault();
-    if (stillBtn.disabled) return;
-    const filename = stillBtn.dataset.filename;
-    const video = document.querySelector(`video[data-filename="${filename}"]`);
-    if (!video) {
-      stillBtn.textContent = 'No video loaded';
-      return;
-    }
-    const time = video.currentTime;
-    const timecode = new Date(time * 1000).toISOString().substr(11, 8);
+    stillButtons.forEach(stillBtn => {
+      stillBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        if (stillBtn.disabled) return;
+        const filename = stillBtn.dataset.filename;
+        const video = document.querySelector(`video[data-filename="${filename}"]`);
+        if (!video) {
+          stillBtn.textContent = 'No video loaded';
+          return;
+        }
+        const time = video.currentTime;
+        const timecode = new Date(time * 1000).toISOString().substr(11, 8);
 
-    stillBtn.disabled = true;
-    stillBtn.textContent = 'Exporting...';
+        stillBtn.disabled = true;
+        stillBtn.textContent = 'Exporting...';
 
-    const res = await fetch('/export_still', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ filename, timecode })
+        const res = await fetch('/export_still', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename, timecode })
+        });
+
+        const result = await res.json();
+        if (result.status === 'success') {
+          stillBtn.textContent = 'Export Again';
+          const image = document.createElement('img');
+          image.src = `/video/${result.output}`;
+          image.width = 320;
+          image.height = 180;
+          image.alt = `Still of ${filename}`;
+
+          const container = stillBtn.closest('.file-entry');
+          const existingImage = container.querySelector('img');
+          if (existingImage) existingImage.remove();
+
+          container.insertBefore(image, container.querySelector('.button-row'));
+        } else {
+          stillBtn.textContent = 'Export Failed';
+        }
+        stillBtn.disabled = false;
+      });
     });
 
-    const result = await res.json();
-    if (result.status === 'success') {
-      stillBtn.textContent = 'Export Again';
-      console.log(`Still exported to /video/${result.output}`);
+    // Adding event listener for Delete buttons
+    deleteButtons.forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const filename = btn.dataset.filename;
 
-      // Insert new still image in UI, replacing only previous image (not video)
-      const image = document.createElement('img');
-      image.src = `/video/${result.output}`;
-      image.width = 320;
-      image.height = 180;
-      image.alt = `Still of ${filename}`;
+        const confirmation = confirm(`Are you sure you want to delete ${filename}?`);
+        if (!confirmation) return;
 
-      const container = stillBtn.closest('.file-entry');
-      const existingImage = container.querySelector('img');
-      if (existingImage) {
-        existingImage.remove();
-      }
+        // Send the delete request to the server
+        const res = await fetch('/delete_file', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename })
+        });
 
-      container.insertBefore(image, container.querySelector('.button-row'));
-    } else {
-      stillBtn.textContent = 'Export Failed';
-    }
-    stillBtn.disabled = false;
-  });
-});
+        const result = await res.json();
+        if (result.status === 'success') {
+          // If the deletion is successful, remove the file entry from the DOM
+          const fileEntry = btn.closest('.file-entry');
+          fileEntry.remove();
+        } else {
+          alert(result.error || 'An error occurred while deleting the files.');
+        }
+      });
+    });
 
     function pollProgress(filename, button, originalText) {
       const id = filename.replace(/\./g, '_');
@@ -268,50 +372,25 @@ stillButtons.forEach(stillBtn => {
             if (bar) bar.style.width = progress + '%';
 
             if (progress >= 100) {
-              location.reload();
               clearInterval(interval);
+              location.reload();
               button.disabled = false;
               button.textContent = originalText;
               button.classList.add('encoded');
 
-              if (stillBtn) {
-                stillBtn.disabled = false;
-              }
-
-              const container = button.closest('.file-entry');
-              const existingImage = container.querySelector(`img[data-filename="${filename}"]`);
-              if (existingImage) existingImage.remove();
-
-              let video = container.querySelector('video');
-              if (!video) {
-                video = document.createElement('video');
-                video.controls = true;
-                video.width = 320;
-                video.height = 180;
-                video.dataset.filename = filename;
-
-                const source = document.createElement('source');
-                source.src = `/video/${filename.replace('.mov', '.mp4')}`;
-                source.type = 'video/mp4';
-                video.appendChild(source);
-
-                container.insertBefore(video, container.querySelector('.button-row'));
-              } else {
-                const source = video.querySelector('source');
-                source.src = `/video/${filename.replace('.mov', '.mp4')}`;
-                video.load();
-              }
+              if (stillBtn) stillBtn.disabled = false;
             }
           }
         }
       }, 1000);
     }
 
-  // Automatic page refresh after 12 seconds
-  setTimeout(() => {
-    location.reload();
-  }, 12000);
-
+    // Auto-refresh every 45 seconds (unless disabled)
+    setInterval(() => {
+      if (autoRefreshToggle.checked) {
+        location.reload();
+      }
+    }, 45000);
   </script>
 </body>
 </html>
