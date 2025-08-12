@@ -7,111 +7,120 @@
   <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
   <style>
     body {
-      background-color: #909090;
+      background-color: #1e1e1e;
       margin: 0;
       padding: 2rem;
-      font-family: Arial, sans-serif;
+      font-family: 'Arial', sans-serif;
+      color: #fff;
     }
 
     h1 {
       margin-top: 0;
-      border-radius: 1px;
-      border-color: #333;
-      background-color: #c4c4c4;
-      padding: 10px;
-      border-left: 6px solid #333;
+      background-color: #333;
+      padding: 15px;
+      border-radius: 6px;
+      color: #fff;
+      font-size: 1.5rem;
+      text-align: left; /* Left justify the header */
     }
 
     .top-controls {
       display: flex;
-      align-items: center;
+      justify-content: flex-start; /* Keep the auto-refresh toggle close to the refresh button */
       margin-bottom: 1rem;
       gap: 1rem;
     }
 
     .refresh-btn {
-      padding: 6px 14px;
-      font-size: 14px;
+      padding: 8px 16px;
       background-color: #007bff;
-      border: 1px solid #333;
-      border-left: 3px solid #333;
-      border-bottom: 3px solid #333;
+      border: none;
       border-radius: 4px;
       color: white;
+      font-size: 14px;
       cursor: pointer;
     }
 
     .file-grid {
       display: flex;
       flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: left;
-      width: 100%;
-      box-sizing: border-box;
+      gap: 1.5rem;
+      justify-content: center;
     }
 
     .file-entry {
-      background-color: #909090;
-      border-radius: 6px;
-      border-left: 3px solid #333;
-      border-right: 1px solid #333;
-      border-bottom: 3px solid #333;
-      border-top: 1px solid #333;
-      box-sizing: border-box;
+      background-color: #333;
+      border-radius: 8px;
       width: 100%;
       max-width: 380px;
       display: flex;
       flex-direction: column;
       margin-top: 1rem;
-      overflow: hidden;
-      align-items: center;
+      box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.3);
     }
 
     .file-header {
-      background-color: #c4c4c4;
-      width: 100%;
-      text-align: left;
-      padding: 5px 20px 5px 40px;
+      background-color: #444;
+      padding: 12px 15px;
       font-weight: bold;
       font-size: 1rem;
-      border-bottom: 1px solid #333;
+      /* border-bottom: 1px solid #555; */
+    }
+
+    .file-header span {
+      float: right;
+      background-color: #cc3333;
+      color: white;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 0.8rem;
     }
 
     video {
-      width: 320px;
-      height: 180px;
-      background: black;
-      display: block;
+      width: 100%;
+      height: auto;
+      /* border-bottom: 1px solid #555;*/
     }
 
     .button-row {
       display: flex;
-      align-items: center;
-      margin-top: 0.5rem;
+      justify-content: space-between;
+      padding: 12px;
+      /* border-top: 1px solid #555; */
+      gap: 14px; /* Increased space between buttons */
     }
 
     .encode-btn, .still-btn, .delete-btn {
-      padding: 0.5rem 1rem;
-      font-size: 1rem;
-      border: 1px solid #333;
-      border-left: 3px solid #333;
-      border-bottom: 3px solid #333;
+      padding: 8px 16px;
+      font-size: 14px;
       border-radius: 4px;
-      color: white;
       cursor: pointer;
+      color: white;
+      border: none;
     }
 
     .encode-btn {
       background-color: #007bff;
+    }
+    
+    .encode-btn:hover {
+      background-color: #066cd8;
     }
 
     .encode-btn.encoded {
       background-color: #4caf50;
     }
 
+    .encode-btn.encoded:hover {
+      background-color: #3f9342;
+    }
+
     .still-btn {
-      margin-left: 1rem;
       background-color: #ff9800;
+    }
+
+    .still-btn:hover {
+      background-color: #e38b06;
     }
 
     .still-btn:disabled {
@@ -120,8 +129,7 @@
     }
 
     .delete-btn {
-      margin-left: 1rem;
-      background-color: #f44336; /* Red background */
+      background-color: #f44336;
     }
 
     .delete-btn:hover {
@@ -129,11 +137,10 @@
     }
 
     .progress-container {
-      width: 320px;
+      width: 100%;
       background-color: #636363;
-      height: 20px;
+      height: 10px;
       border-radius: 5px;
-      overflow: hidden;
       margin-top: 5px;
     }
 
@@ -146,7 +153,7 @@
 
     .no-files-message {
       font-size: 1.5rem;
-      color: #555;
+      color: #bbb;
       text-align: center;
       margin-top: 3rem;
     }
@@ -229,12 +236,12 @@
       <div class="file-header">
         {{ file.basename }}
         {% if "countdown" in file.basename.lower() %}
-        <span style="float: right; background-color: #cc3333; color: white; padding: 3px; padding-right: 8px; border-radius: 3px; font-weight: bold; font-size: 0.7rem;">CD</span>
+        <span>CD</span>
         {% endif %}
       </div>
-      <div style="padding: 10px; width: 100%; display: flex; flex-direction: column; align-items: center;">
+      <div style="padding: 10px; display: flex; flex-direction: column; align-items: center;">
       {% if file.encoded %}
-        <video controls data-filename="{{ file.name }}">
+        <video controls controlslist="nofullscreen nopictureinpicture" data-filename="{{ file.name }}">
           <source src="{{ url_for('serve_video', filename=file.mp4) }}" type="video/mp4">
           Your browser does not support HTML5 video.
         </video>
@@ -253,7 +260,7 @@
       <div class="button-row">
         <button class="encode-btn {% if file.encoded %}encoded{% endif %}" data-filename="{{ file.name }}">Encode</button>
         <button class="still-btn" data-filename="{{ file.name }}" {% if not file.encoded %}hidden{% endif %}>Export Still</button>
-        <button class="delete-btn" data-filename="{{ file.name }}">Delete</button>  <!-- New Delete Button -->
+        <button class="delete-btn" data-filename="{{ file.name }}">Delete</button>
       </div>
       <div class="progress-container">
         <div class="progress-bar" id="progress-{{ file.name | replace('.', '_') }}"></div>
@@ -266,7 +273,7 @@
   <script>
     const encodeButtons = document.querySelectorAll('.encode-btn');
     const stillButtons = document.querySelectorAll('.still-btn');
-    const deleteButtons = document.querySelectorAll('.delete-btn'); // Select Delete buttons
+    const deleteButtons = document.querySelectorAll('.delete-btn');
     const autoRefreshToggle = document.getElementById('auto-refresh-toggle');
 
     encodeButtons.forEach(btn => {
