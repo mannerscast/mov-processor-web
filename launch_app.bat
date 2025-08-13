@@ -5,7 +5,7 @@ cd /d %~dp0
 call venv\Scripts\activate
 
 :: Launch browser
-start "" "http://127.0.0.1:5000/"
+start "" "http://127.0.0.1:5050/"
 
 :: Run Flask app
 python app.py
